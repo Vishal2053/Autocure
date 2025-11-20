@@ -1,0 +1,44 @@
+Metadata-Version: 2.4
+Name: autocure
+Version: 0.2.0
+Summary: Automated data cleaning and auto ML training with hyperparameter tuning.
+Home-page: https://pypi.org/project/autocure/
+Author: Vishal More
+License: MIT
+Project-URL: Source, https://github.com/YOUR_GITHUB/autocure
+Project-URL: Tracker, https://github.com/YOUR_GITHUB/autocure/issues
+Keywords: data-cleaning,machine-learning,automation,sklearn,pipeline
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: pandas
+Requires-Dist: scikit-learn
+Requires-Dist: click
+Dynamic: license-file
+Dynamic: requires-dist
+
+# Autocure
+Automated data cleaning + auto ML model training with hyperparameter tuning.
+
+## Features
+- Auto scan (missing values, outliers, dtypes)
+- Auto clean (impute, drop duplicates)
+- Auto ML pipeline
+- Auto model training (classification + regression)
+- Hyperparameter tuning via GridSearchCV
+- Best model selection
+- Model leaderboard
+
+## Usage
+
+```python
+import autocure as ac
+
+report = ac.scan(df)
+clean = ac.cure(df)
+result = ac.train(clean, target="price")
+print(result["best_model_name"])
+print(result["best_score"])
