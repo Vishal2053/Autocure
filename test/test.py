@@ -1,64 +1,87 @@
 """
-Autocure test script using IMDB Sentiment Dataset
-(review, sentiment)
-
-Steps:
-- load dataset from URL
-- scan
-- cure
-- make_pipeline
-- train
-- predict
+Autocure test script using sklearn datasets (iris or wine)
 """
 
 from autocure import scan, cure, make_pipeline, train
 import pandas as pd
+from sklearn import datasets
+
+# Choose dataset: "iris" or "wine"
+DATASET = "wine"
+
+
+def load_sklearn_dataset(name: str) -> pd.DataFrame:
+    if name == "wine":
+        data = datasets.load_wine()
+    else:
+        data = datasets.load_iris()
+
+    df = pd.DataFrame(data.data, columns=data.feature_names)
+    df["label"] = data.target
+    return df
 
 
 def main():
+    print(f"Loading sklearn '{DATASET}' dataset...")
+    df = load_sklearn_dataset(DATASET)
 
-    print("🎬 Loading IMDB Sentiment Dataset...")
-    url = "https://raw.githubusercontent.com/Ankit152/IMDB-sentiment-analysis/master/IMDB-Dataset.csv"
-    df = pd.read_csv(url)
+    print(f"Dataset shape: {df.shape}")
+    print(df.head(2))
 
-    print(df.head())
-
-    print("\n📌 Rename columns for consistency...")
-    df["content"] = df["review"]
-    df["label"] = df["sentiment"].map({"positive": 1, "negative": 0})
-    df = df[["content", "label"]]
-
-    print(df.head())
-
-    print("\n📌 Running scan()...")
+    print("\nRunning scan()...")
     issues = scan(df)
     print("Issues found:", issues)
 
-    print("\n🧹 Running cure()...")
+    print("\nRunning cure()...")
     df_clean = cure(df)
-    print("Cleaned data sample:")
-    print(df_clean.head())
+    print(f"After cleaning: {df_clean.shape}")
+    print(df_clean.head(2))
 
-    print("\n🔗 Creating pipeline...")
+    print("\nCreating pipeline...")
     pipeline = make_pipeline(df_clean, target="label")
-    print("Pipeline created:")
-    print(pipeline)
+    print("Pipeline created successfully!")
 
-    print("\n🤖 Training using train()...")
-    result = train(df_clean, target="label")
+    # ========================================================
+    # Train (uses autocure.train defaults)
+    # ========================================================
+    print("\n" + "="*60)
+    print("Training (using autocure.train defaults)")
 
-    best_model = result["best_model"]
-    best_score = result["best_score"]
+    result_custom = train(
+        df_clean,
+        target="label"
+    )
 
-    print("\n🎉 Best model:")
-    print(result["best_model_name"])
-    print(f"Best score: {best_score:.4f}")
-    print("Best parameters:", result["best_params"])
+    print("\nModel Training Complete!")
+    print(f"Model: {result_custom.get('best_model_name')}")
+    print(f"Test Accuracy: {result_custom.get('best_score')}")
+    print(f"Used Parameters: {result_custom.get('best_params')}")
 
-    print("\n🔮 Predictions on sample data:")
-    sample_data = df_clean.drop("label", axis=1).iloc[:5]
-    preds = best_model.predict(sample_data)
-    print(preds)
+    # ========================================================
+    # Make predictions on a few samples
+    # ========================================================
+    print("\nPredictions on sample rows:")
+    sample_data = df_clean.drop("label", axis=1).iloc[:5].copy()
+    print(sample_data)
+
+    best_model = result_custom["best_model"]
+    predictions = best_model.predict(sample_data)
+    proba = None
+    try:
+        # handle pipeline or estimator
+        estimator = best_model[-1] if hasattr(best_model, "__len__") and not hasattr(best_model, "predict") else best_model
+        if hasattr(estimator, "predict_proba"):
+            proba = best_model.predict_proba(sample_data)
+    except Exception:
+        proba = None
+
+    print("\n→ Predictions (label indices):")
+    for i, pred in enumerate(predictions):
+        confidence = f"{proba[i].max():.3f}" if proba is not None else "N/A"
+        print(f"   Row {i}: Predicted label = {pred} (confidence: {confidence})")
+        print(f"   → features: {sample_data.iloc[i].to_dict()}\n")
+
+    print("Test completed successfully!")
 
 
 if __name__ == "__main__":
