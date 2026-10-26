@@ -1,35 +1,38 @@
 # Autocure
 
-Automated data cleaning + AutoML model training with hyperparameter tuning.
+**The All-In-One Automated Data Quality, Diagnosis, AutoML & Model Versioning Engine.**
 
-## Key features
+Autocure transforms raw, messy data into production-ready, explainable machine learning models in a single command, complete with **automated MLflow experiment tracking, model versioning, and an interactive dashboard**.
 
-- Data scan
-  - Missing values summary
-  - Dtype inference
-  - Outlier counts (IQR method)
-  - Duplicate rows count
+---
 
-- Data cleaning (cure)
-  - Numeric imputation (median)
-  - Categorical imputation (mode / fallback "Unknown")
-  - Text preprocessing (applies only to text columns):
-    - remove punctuation
-    - lowercase
-    - tokenize
-    - remove stopwords
-    - lemmatize
-  - Drop duplicates
+## Key Features
 
-- Pipeline & AutoML
-  - Automatic ColumnTransformer (StandardScaler for numeric, OneHotEncoder for categorical)
-  - Support for classification and regression
-  - Multiple algorithms with GridSearchCV hyperparameter search
-  - Model leaderboard and best-model selection
-  - Save best model as a pickle into autocure/models/{model_name}_model.pickle
+- **Flagship 1-Click Autopilot (`ac.autopilot(df, target)`)**
+  - Instant end-to-end data science in one line: runs deep diagnosis, auto-drops non-predictive ID & constant columns, performs smart cleaning & outlier Winsorization, trains and tunes multiple ML models, and extracts feature drivers.
+- **MLflow Tracking & Model Versioning**
+  - **Zero-overhead design**: Tracking runs **automatically in CLI commands** (`train-model`, `run-autopilot`) to track parameters, dataset shapes, metric leaderboards, and registered model versions (`Version 1`, `Version 2`, etc.).
+  - Normal Python code (`ac.train`, `ac.autopilot`) runs cleanly without overhead or file clutter unless explicitly enabled (`track_mlflow=True`).
+- **Interactive MLflow Dashboard (`autocure dashboard` / `autocure ui`)**
+  - Launch an interactive web dashboard with 1 command at `http://127.0.0.1:5000` to inspect runs, compare metric curves, view artifacts, and audit model versions.
+- **Data Health & Leakage Doctor (`ac.diagnose(df, target)`)**
+  - Calculates an overall **Data Health Score (0–100%)**.
+  - Flags **Target Leakage** ($r \ge 0.95$ with target).
+  - Detects **ID & High-Cardinality traps** that cause overfitting.
+  - Warns about **Zero-variance constant columns** and **Severe Class Imbalance**.
+- **Smart Data Curing (`ac.cure(df)`)**
+  - Robust numeric imputation across all numeric dtypes.
+  - Context-aware categorical cleaning that preserves standard categories while cleaning free-text NLP columns.
+  - Optional statistical outlier Winsorization (`clip_outliers=True`).
+- **Model Explainability & Drivers (`ac.explain(result)`)**
+  - Extracts feature importances and coefficients directly into a percentage contribution table and visual driver summary.
+- **Instant REST API (`ac.serve(result)`)**
+  - Spins up a live FastAPI web server with interactive Swagger documentation at `/docs` in one command.
+- **Production-Ready Pipeline & AutoML (`ac.train(df, target)`)**
+  - Fast modern estimators including **HistGradientBoosting**, **RandomForest**, and linear models with cross-validated parameter tuning.
+  - Full preprocessing pipeline bundled with model pickle for seamless deployment.
 
-- CLI
-  - scan-data, fix, train-model commands for quick workflows
+---
 
 ## Installation
 
@@ -39,18 +42,78 @@ From project root (editable install for development):
 python -m pip install -e .
 ```
 
-Or install dependencies:
+Or install from `requirements.txt`:
 
 ```bash
 pip install -r requirements.txt
 pip install nltk
 ```
 
-NLTK data used by cure() is downloaded at runtime (punkt, stopwords, wordnet).
+---
 
-## Quick usage
+## CLI Reference
 
-Python:
+Autocure comes with a rich CLI interface. CLI training commands automatically track runs and version models in MLflow.
+
+### Available Commands
+
+| Command | Description |
+| :--- | :--- |
+| `autocure dashboard` (alias `ui`) | Launch interactive MLflow dashboard server and open browser |
+| `autocure train-model <file>` | Run AutoML model search with automatic MLflow versioning |
+| `autocure run-autopilot <file>` | 1-Click end-to-end diagnosis, cure, AutoML & MLflow tracking |
+| `autocure health <file>` | Diagnose dataset quality, health score, and data leakage |
+| `autocure scan-data <file>` | Scan dataset for missing values, dtypes, and IQR outliers |
+| `autocure fix <file>` | Clean dataset with smart imputation and text normalization |
+| `autocure start-server <file>` | Launch production FastAPI REST service for a trained pickle |
+
+### CLI Examples
+
+#### 1. Train AutoML with Automatic MLflow Model Versioning
+```bash
+autocure train-model dataset.csv --target label
+```
+Output:
+```text
+Best Model: random_forest_classifier | Score: 0.9850
+[MLflow] Tracking active: Experiment 'autocure'
+[MLflow] Run ID: 703ad8884f764fc0a4bb1c10af728f60
+[MLflow] Registered Model 'autocure_label' -> Version 2
+[MLflow] Run `autocure dashboard` to view your models and runs.
+```
+
+#### 2. End-to-End Autopilot via CLI
+```bash
+autocure run-autopilot dataset.csv --target label
+```
+
+#### 3. Open MLflow Dashboard UI
+```bash
+# Launch dashboard and automatically open your default browser:
+autocure dashboard
+
+# Or use the shortcut alias:
+autocure ui
+
+# Custom port or host:
+autocure dashboard --port 5005 --host 0.0.0.0
+```
+
+#### 4. Automatic Dashboard Launch After Training
+```bash
+autocure train-model dataset.csv --target label --open-dashboard
+```
+
+#### 5. Disable MLflow in CLI (Optional)
+```bash
+autocure train-model dataset.csv --target label --no-mlflow
+```
+
+---
+
+## Python API Usage
+
+### 1. Flagship Autopilot (Recommended)
 
 ```python
 import autocure as ac
@@ -58,111 +121,67 @@ import pandas as pd
 
 df = pd.read_csv("your_dataset.csv")
 
-# 1) Inspect dataset
-report = ac.scan(df)
-print(report)
+# 1-Line end-to-end diagnosis, auto-cleaning, AutoML, and explainability
+result = ac.autopilot(df, target="target_column")
 
-# 2) Clean dataset
-clean = ac.cure(df)
+print(f"Best Model: {result.best_model_name} (Score: {result.best_score:.4f})")
 
-# 3) Create pipeline (optional)
-pipeline = ac.make_pipeline(clean, target="target_column")
+# Direct inference (automatically handles preprocessing & dropped traps)
+preds = result.predict(df.iloc[:5])
+probs = result.predict_proba(df.iloc[:5])
 
-# 4) Train models (returns a dict)
-result = ac.train(clean, target="target_column")
-
-print(result["best_model_name"])
-print("score:", result["best_score"])
-# Best model object for predict:
-best_model = result["best_model"]
-preds = best_model.predict(clean.drop(columns=["target_column"]).iloc[:5])
+# Explain top model drivers
+drivers_df = result.explain(top_n=5)
 ```
 
-Returned keys from train():
-- best_model (fitted sklearn estimator / pipeline)
-- best_model_name
-- best_score
-- best_params
-- leaderboard (list/dict of model results)
-- model_path (path to saved pickle file under autocure/models/)
-
-## Train a custom model (pass model_name + model_params)
-
-You can request training of a specific model with custom (fixed) parameters by passing model_name and model_params to train(). When both are provided, train() will set the estimator parameters, fit on the data (no GridSearch), evaluate on the test split, and save the fitted pipeline to a pickle file:
-
-- Saved path: autocure/models/{model_name}_model.pickle
-
-Example (your requested usage):
+### 2. Manual Diagnostics & Curing
 
 ```python
-from autocure import cure, train
+import autocure as ac
 import pandas as pd
-from sklearn import datasets
 
-data = datasets.load_iris()
-df = pd.DataFrame(data.data, columns=data.feature_names)
-df["label"] = data.target
+df = pd.read_csv("your_dataset.csv")
 
-clean = cure(df)
+# Diagnose health and target leakage
+report = ac.diagnose(df, target="target_column")
+print("Health Score:", report["health_score"])
 
-result_custom = train(
-    clean,
-    target="label",
-    model_name="random_forest_classifier",
-    model_params={"n_estimators": 50, "max_depth": 5}
+# Clean & cure dataset
+clean_df = ac.cure(df, clip_outliers=True)
+
+# Train AutoML models
+train_res = ac.train(clean_df, target="target_column")
+```
+
+### 3. Optional MLflow Tracking in Python Code
+
+Normal Python execution does not trigger MLflow runs to keep your scripts fast and clean. If you want MLflow tracking in Python, pass `track_mlflow=True`:
+
+```python
+train_res = ac.train(
+    clean_df,
+    target="target_column",
+    track_mlflow=True,
+    experiment_name="production_models"
 )
 
-print("Best model:", result_custom["best_model_name"])
-print("Score:", result_custom["best_score"])
-print("Saved model path:", result_custom["model_path"])
+# Open MLflow dashboard directly from Python:
+ac.dashboard(port=5000)
 ```
 
-Notes:
-- model_name must match one of the identifiers in train.py's base_models mapping (e.g. "random_forest_classifier", "logistic_regression", etc.). If you add new models to train.py's base_models, you can use the new identifier here.
-- model_params should be a dict of estimator parameters (the keys are the estimator's parameter names, not pipeline step names). train() calls set_params(**model_params) on the estimator before fitting.
-- The saved pickle contains the full pipeline (preprocessing + estimator) so it can be used directly for predict().
+---
 
-## Loading a saved model
+## Serving Models as a REST API
 
-```python
-import pickle
-import pandas as pd
-
-X = pd.read_csv("my_features.csv")  # ensure same columns as training input
-
-with open("autocure/models/random_forest_classifier_model.pickle", "rb") as f:
-    model = pickle.load(f)
-
-preds = model.predict(X)
-if hasattr(model, "predict_proba"):
-    probs = model.predict_proba(X)
-```
-
-## CLI
-
-Examples:
+Deploy your trained model with interactive Swagger docs in one command:
 
 ```bash
-# Scan a CSV
-autocure scan-data data.csv
-
-# Clean and save
-autocure fix data.csv --out cleaned.csv
-
-# Train via CLI
-autocure train-model data.csv --target target_column
+autocure start-server models/random_forest_classifier_model.pickle --port 8000
 ```
+Visit `http://localhost:8000/docs` in your browser to interact with the API.
 
-## Tips & notes
-
-- cure() applies text preprocessing only to columns detected as object/string dtype.
-- For custom high-cardinality categorical handling or advanced NLP, prepare features (vectorize / embed) before calling train() or extend the preprocessing in train.py.
-- To add custom models to the AutoML search, add them to train.py's base_models dict (include estimator instance and param grid).
-
-## Contributing
-
-Bug reports and PRs welcome. Follow repository guidelines and add tests for new behavior.
+---
 
 ## License
 
-MIT License
+MIT License. Contributions and PRs welcome!

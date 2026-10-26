@@ -1,3 +1,38 @@
-env
-autocure.egg-info
-dist
+# Virtual environments
+env/
+venv/
+.venv/
+ENV/
+
+# Python bytecode & caches
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Package distributions & build artifacts
+build/
+dist/
+*.egg-info/
+*.egg
+
+# MLflow & experiment tracking
+mlruns/
+mlartifacts/
+.mlflow/
+*.db
+
+# Trained models & weights
+models/
+autocure/models/
+*.pickle
+*.pkl
+
+# Temporary outputs
+clean.csv
+
+# IDE & OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,3 +1,17 @@
 pandas
+numpy
 scikit-learn
 click
+mlflow
+
+[all]
+fastapi
+uvicorn
+nltk
+
+[api]
+fastapi
+uvicorn
+
+[nlp]
+nltk

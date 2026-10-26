@@ -4,9 +4,14 @@ pyproject.toml
 setup.cfg
 setup.py
 autocure/__init__.py
+autocure/autopilot.py
 autocure/cure.py
+autocure/diagnose.py
+autocure/explain.py
 autocure/pipeline.py
 autocure/scan.py
+autocure/serve.py
+autocure/tracking.py
 autocure/train.py
 autocure.egg-info/PKG-INFO
 autocure.egg-info/SOURCES.txt
@@ -17,3 +22,5 @@ autocure.egg-info/top_level.txt
 autocure/cli/__init__.py
 autocure/cli/main.py
 test/test.py
+test/test_accuracy_features.py
+test/test_advanced.py

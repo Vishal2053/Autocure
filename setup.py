@@ -1,17 +1,5 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
-setup(
-    name="autocure",
-    version="1.2.0",
-    packages=find_packages(),
-    install_requires=[
-        "pandas",
-        "scikit-learn",
-        "click"
-    ],
-    entry_points={
-        "console_scripts": [
-            "autocure=autocure.cli.main:cli"
-        ]
-    }
-)
+if __name__ == "__main__":
+    setup()
+

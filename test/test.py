@@ -75,11 +75,11 @@ def main():
     except Exception:
         proba = None
 
-    print("\n→ Predictions (label indices):")
+    print("\n-> Predictions (label indices):")
     for i, pred in enumerate(predictions):
         confidence = f"{proba[i].max():.3f}" if proba is not None else "N/A"
         print(f"   Row {i}: Predicted label = {pred} (confidence: {confidence})")
-        print(f"   → features: {sample_data.iloc[i].to_dict()}\n")
+        print(f"   -> features: {sample_data.iloc[i].to_dict()}\n")
 
     print("Test completed successfully!")
 
